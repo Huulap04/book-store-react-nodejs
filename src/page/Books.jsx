@@ -1,61 +1,79 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
 
 function Books() {
   const [books, setBooks] = useState([]);
+
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/books")
-      .then((response) => {
-        setBooks(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching books:", error);
-      });
+    fetch("http://localhost:5000/books")
+      .then((res) => res.json())
+      .then((data) => setBooks(data));
   }, []);
+
   return (
-    <div className=" mt-4 d-flex flex-column align-items-start">
-      <div>
-        <Link to="/add-book" className="btn btn-success mt-auto">
-          + Add Book
+    <div className="container mt-4">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="fw-bold text-primary">📚 Book Store</h2>
+
+        <Link to="/add-book" className="btn btn-success fw-bold">
+          ➕ Add Book
         </Link>
       </div>
-      <h2>Book List</h2>
 
-      <div className="row text-start">
+      {/* Grid */}
+      <div className="row">
         {books.map((book) => (
           <div className="col-md-3 mb-4" key={book.id}>
-            <div className="card h-100 w-100">
+            <div
+              className="card h-100 shadow-sm border-0"
+              style={{
+                borderRadius: "15px",
+                overflow: "hidden",
+                transition: "0.3s",
+              }}
+            >
+              {/* Image */}
               <img
                 src={book.image}
-                className="card-img-top"
                 alt={book.title}
-                style={{ height: "300px", objectFit: "cover" }}
+                className="card-img-top"
+                style={{
+                  height: "280px",
+                  objectFit: "cover",
+                }}
               />
 
+              {/* Body */}
               <div className="card-body d-flex flex-column">
-                <h6 className="card-title">{book.title}</h6>
-                <p
-                  className="card-text mb-1  text-muted"
-                  style={{ fontSize: "14px" }}
-                >
-                  Author: {book.author}
+                <h6 className="fw-bold">{book.title}</h6>
+
+                <p className="text-muted mb-1" style={{ fontSize: "14px" }}>
+                  ✍ {book.author}
                 </p>
-                <p className="card-text">Price: {book.price}</p>
+
+                <p className="text-danger fw-bold">{book.price}</p>
+
                 <Link
                   to={`/books/${book.id}`}
-                  className="btn btn-success mt-auto"
+                  className="btn btn-outline-success mt-auto"
                 >
-                  <i className="bi bi-arrow-right me-1"> </i>
-                  View Details
+                  View Details →
                 </Link>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Empty state */}
+      {books.length === 0 && (
+        <div className="text-center mt-5">
+          <h5>No books found 📭</h5>
+        </div>
+      )}
     </div>
   );
 }
+
 export default Books;

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
 
 function AddBook() {
@@ -17,55 +16,129 @@ function AddBook() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    axios
-      .post("http://localhost:5000/books", book)
-      .then((res) => {
-        alert("Add book success!");
-        console.log(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
+    try {
+      const res = await fetch("http://localhost:5000/books", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(book),
       });
+
+      if (res.ok) {
+        alert("✅ Book added successfully!");
+        setBook({
+          title: "",
+          author: "",
+          price: "",
+          image: "",
+        });
+      } else {
+        alert("❌ Failed to add book");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error connecting to server");
+    }
   };
 
   return (
-    <div className="container mt-4">
-      <h2>Add Book</h2>
+    <div className="d-flex justify-content-center align-items-center mt-5">
+      <div
+        className="card p-4 shadow-lg"
+        style={{ width: "500px", borderRadius: "15px" }}
+      >
+        <h2 className="text-center mb-4 text-primary fw-bold">
+          📚 Add New Book
+        </h2>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          name="title"
-          placeholder="Title"
-          onChange={handleChange}
-          className="form-control mb-2"
-        />
-        <input
-          name="author"
-          placeholder="Author"
-          onChange={handleChange}
-          className="form-control mb-2"
-        />
-        <input
-          name="price"
-          placeholder="Price"
-          onChange={handleChange}
-          className="form-control mb-2"
-        />
-        <input
-          name="image"
-          placeholder="Image URL"
-          onChange={handleChange}
-          className="form-control mb-2"
-        />
+        <form onSubmit={handleSubmit} className="text-start">
+          {/* Title */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Title</label>
+            <input
+              type="text"
+              name="title"
+              value={book.title}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="Enter book title"
+              required
+            />
+          </div>
 
-        <button className="btn btn-primary">Add</button>
-      </form>
-      <Link to="/books" className="btn btn-success mt-3 ">
-        ← Back to Book List
-      </Link>
+          {/* Author */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Author</label>
+            <input
+              type="text"
+              name="author"
+              value={book.author}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="Enter author name"
+              required
+            />
+          </div>
+
+          {/* Price */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Price</label>
+            <input
+              type="text"
+              name="price"
+              value={book.price}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="$20"
+              required
+            />
+          </div>
+
+          {/* Image */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Image URL</label>
+            <input
+              type="text"
+              name="image"
+              value={book.image}
+              onChange={handleChange}
+              className="form-control"
+              placeholder="/images/book-1.jpg"
+            />
+          </div>
+
+          {/* Preview ảnh */}
+          {book.image && (
+            <div className="text-center mb-3">
+              <img
+                src={book.image}
+                alt="preview"
+                style={{
+                  width: "150px",
+                  height: "200px",
+                  objectFit: "cover",
+                  borderRadius: "10px",
+                  border: "1px solid #ddd",
+                }}
+              />
+            </div>
+          )}
+
+          {/* Button */}
+          <button className="btn btn-primary w-100 fw-bold">
+            ➕ Add Book
+          </button>
+        </form>
+
+        {/* Back */}
+        <Link to="/books" className="btn btn-outline-success mt-3 w-100">
+          ← Back to Book List
+        </Link>
+      </div>
     </div>
   );
 }

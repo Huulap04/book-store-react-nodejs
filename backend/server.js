@@ -1,145 +1,187 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
+const { sql, connectDB } = require("./db");
 
 const app = express();
+const PORT = 5000;
+
+// ================= MIDDLEWARE =================
 app.use(cors());
 app.use(express.json());
 
-let home = {
-    "title": "Welcome to the Book Store",
-    "content": "<p class=\"lead\">Discover a world of stories and knowledge at our Book Store, where every page is a portal to a new adventure.</p><p>With an extensive collection of over 10,000 titles, you'll always find something tailored to your interests. From thrilling mysteries to heartwarming romances, captivating science fiction to insightful non-fiction, our shelves are brimming with possibilities.</p><p>What sets us apart?</p><ul><li><strong>Curated Bestsellers:</strong> Stay ahead of the literary curve with the latest must-reads and award winners.</li><li><strong>Timeless Classics:</strong> Rediscover the magic of iconic works that have stood the test of time.</li><li><strong>Diverse Genres:</strong> Explore everything from historical fiction and biographies to fantasy and self-help.</li><li><strong>Expert Recommendations:</strong> Our team of book enthusiasts curates personalized lists to help you find your next great read.</li></ul><p>More than just a store, we are a community of passionate readers. Join us for author signings, book clubs, and literary discussions that promise to ignite your love for literature. Dive into the world of books, where every story is waiting to be uncovered.</p>"
-  };
 
-const books = [
-  {
-      "id": "1",
-      "title": "Harry Potter",
-      "author": "J.K. Rowling",
-      "price": "$20",
-      "image": "/images/book-1.jpg"
-    },
-    {
-      "id": "2",
-      "title": "The Great Gatsby",
-      "author": "F. Scott Fitzgerald",
-      "price": "$15",
-      "image": "/images/book-2.jpg"
-    },
-    {
-      "id": "3",
-      "title": "To Kill a Mockingbird",
-      "author": "Harper Lee",
-      "price": "$18",
-      "image": "/images/book-3.jpg"
-    },
-    {
-      "id": "4",
-      "title": "1984",
-      "author": "George Orwell",
-      "price": "$22",
-      "image": "/images/book-4.jpg"
-    },
-    {
-      "id": "5",
-      "title": "The Catcher in the Rye",
-      "author": "J.D. Salinger",
-      "price": "$19",
-      "image": "/images/book-5.jpg"
-    },
-    {
-      "id": "6",
-      "title": "Pet Sematary",
-      "author": "Stephen King",
-      "price": "$29",
-      "image": "/images/book-6.jpg"
-    },
-    {
-      "id": "7",
-      "title": "C++ Primer 5th edition",
-      "author": "Stanley B.Lippman",
-      "price": "$49",
-      "image": "/images/book-7.jpg"
-    },
-    {
-      "id": "8",
-      "title": "Where The Crawdads Sing",
-      "author": "Della Owens",
-      "price": "$39",
-      "image": "/images/book-8.jpg"
-    },
-    {
-      "id": "9",
-      "title": "The Hobbit",
-      "author": "J.R.R Tolkien",
-      "price": "$50",
-      "image": "/images/book-9.jpg"
-    },
-    {
-      "id": "10",
-      "title": "The Lord Of The Rings",
-      "author": "J.R.R Tolkien",
-      "price": "$59",
-      "image": "/images/book-10.jpg"
-    },
-    {
-      "id": "11",
-      "title": "Mastering ChatGPT for Beginners",
-      "author": "Shane Corbitt",
-      "price": "$99",
-      "image": "/images/book-11.jpg"
-    },
-    {
-      "id": "12",
-      "title": "Make American Greate Again",
-      "author": "Donald J.Trump",
-      "price": "$19",
-      "image": "/images/book-12.jpg"
-    }
-];
-app.get('/home', (req, res) => {
-  res.json(home);
+// ================= HOME =================
+app.get("/home", (req, res) => {
+  res.json({
+    title: "📚 Welcome to the Book Store",
+    content: `
+      <p class="lead">
+        Discover your next favorite book with us.
+      </p>
+
+      <p>We offer a wide collection:</p>
+
+      <ul>
+        <li>🔥 Bestsellers</li>
+        <li>📖 Classic novels</li>
+        <li>🌍 Multiple genres</li>
+        <li>⭐ Recommended picks</li>
+      </ul>
+
+      <p>Start exploring today!</p>
+    `,
+  });
 });
 
-app.get('/books', (req, res) => {
-  res.json(books);
+
+// ================= GET ALL BOOKS =================
+app.get("/books", async (req, res) => {
+  try {
+    const result = await sql.query("SELECT * FROM Books ORDER BY id DESC");
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
 });
 
-app.get('/books/:id', (req, res) => {
+
+// ================= GET BOOK BY ID =================
+app.get("/books/:id", async (req, res) => {
   const { id } = req.params;
-  const book = books.find((b) => b.id === id);
 
-  if (!book) {
-    return res.status(404).json({ message: 'Book not found' });
+  try {
+    const result = await sql.query`
+      SELECT * FROM Books WHERE id = ${id}
+    `;
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "❌ Book not found" });
+    }
+
+    res.json(result.recordset[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
+});
+
+
+// ================= ADD BOOK =================
+app.post("/books", async (req, res) => {
+  const { title, author, price, image } = req.body;
+
+  // Validate
+  if (!title || !author || !price) {
+    return res.status(400).json({
+      message: "❌ Title, Author, Price are required",
+    });
   }
 
-  res.json(book);
+  try {
+    await sql.query`
+      INSERT INTO Books (title, author, price, image)
+      VALUES (${title}, ${author}, ${price}, ${image || "/images/default.jpg"})
+    `;
+
+    res.status(201).json({ message: "✅ Book added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
+});
+
+
+// ================= UPDATE BOOK =================
+app.put("/books/:id", async (req, res) => {
+  const { id } = req.params;
+  const { title, author, price, image } = req.body;
+
+  try {
+    await sql.query`
+      UPDATE Books
+      SET title = ${title},
+          author = ${author},
+          price = ${price},
+          image = ${image}
+      WHERE id = ${id}
+    `;
+
+    res.json({ message: "✅ Book updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
+});
+
+
+// ================= DELETE BOOK =================
+app.delete("/books/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await sql.query`DELETE FROM Books WHERE id = ${id}`;
+    res.json({ message: "🗑️ Book deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
+});
+
+
+// ================= CONTACT =================
+app.post("/contacts", async (req, res) => {
+  const { name, email, message } = req.body;
+
+  // Validate
+  if (!name || !email || !message) {
+    return res.status(400).json({
+      message: "❌ All fields are required",
+    });
+  }
+
+  try {
+    await sql.query`
+      INSERT INTO Contacts (name, email, message)
+      VALUES (${name}, ${email}, ${message})
+    `;
+
+    res.status(201).json({
+      message: "✅ Contact saved successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
+});
+
+app.get("/contacts", async (req, res) => {
+  try {
+    const result = await sql.query(
+      "SELECT * FROM Contacts ORDER BY created_at DESC"
+    );
+    res.json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("❌ Server error");
+  }
 });
 
 
 
-app.post('/books', (req, res) => {
-  const newBook = req.body;
 
-  newBook.id = Date.now().toString(); // tạo id đơn giản
+// ================= START SERVER =================
+const startServer = async () => {
+  try {
+    await connectDB();
+    console.log("✅ Connected to SQL Server");
 
-  books.push(newBook);
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
+  }
+};
 
-  res.status(201).json(newBook);
-});
-
-
-let contacts = [];
-app.post('/contacts', (req, res) => {
-  const newContact = req.body;
-  newContact.id = Date.now().toString();
-  contacts.push(newContact);
-  res.status(201).json(newContact);
-});
-
-app.get('/contacts', (req, res) => {
-  res.json(contacts);
-});
-
-app.listen(5000, () => {
-  console.log('Server is running at http://localhost:5000');
-});
+startServer();
