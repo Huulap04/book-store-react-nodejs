@@ -2,7 +2,7 @@ import { NavLink , Link} from "react-router-dom";
 
 function Navbar() {
   return (
-    <nav className=" navbar-light bg-dark px-4 shadow-sm navbar ">
+    <nav className=" navbar-light bg-secondary px-4 shadow-sm navbar ">
       <div className="d-flex align-items-center">
         <Link className="navbar-brand d-flex align-items-center" to="/">
           <img
